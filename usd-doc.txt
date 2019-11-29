@@ -1,0 +1,172 @@
+ - 出现python27_d.lib LINK的问题
+
+    I changed
+    
+    1. 打开文件C:\Python27\include\pyconfig.h
+    
+    2. 注释掉 //#define Py_DEBUG
+
+    3. 修改
+    ifdef _DEBUG
+    #	pragma comment(lib,"python27_d.lib")
+    To 
+    ifdef _DEBUG
+    #	pragma comment(lib,"python27.lib")
+
+    Made a copy of python27.lib and rename it python27_d.lib
+    And build usd with –maya flag works now
+
+ - 缺失C:\Python27\include\pyconfig.h文件
+
+    重新安装相应版本的python，然后选择fix python
+
+
+ - Windows10安装maya-usd的方式
+
+    I have done multiple tests trying to compile usd_maya repo. I have achieved to compile it in 2 different ways.
+
+    * With CMake. Using CMake directly is cool because you can setup all variables in UI and you can easily check the values of the different arguments for compilation. The problem
+
+    is that the libraries are generated in different folders and you need to a lot of manual work to create a proper data folder structure to make everything work as expected.
+
+    * Using build.py usd_maya script. This is the quickest and easy way of building the library.
+
+    1. Make sure that you have devkit installed in your Maya installation folder.
+
+    2. Make sure that your Python has installed PyOpenGL and PySide
+
+        2.1. Go to Scripts folder in your Python directory and call pip install PySide (necessary to work with usdview)
+
+        2.2. Go to Scripts folder in your Python directory and call pip install PyOpenGL (necessary to work usdview)
+
+    3. Launch command line and make sure vcvarsall.bat is launched. You can do in 2 different ways:
+
+        3.1. Launch cmd and call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
+
+        3.2. Launch vs2015 x64 native system tool symbols command line. This will automatically call vcvarsall.bat for you.
+
+    4. Clone USD Pixar repository: https://github.com/PixarAnimationStudios/USD
+
+        1.1. We MUST use the same USD version that Maya USD plugin is supporting.
+
+            1.1.1. git clone https://github.com/PixarAnimationStudios/USD
+
+            1.1.2. cd USD
+
+            1.1.3. git checkout v19.05
+
+    5. Open cmd and go to: USD\build_scripts
+
+    6. In that folder, call in cmd: "C:\Python27\python.exe" build_usd.py --build-args boost,"--with-date_time --with-thread --with-system --with-filesystem" --no-maya C:\usd
+
+    NOTE: It's important to intall those specific Boost libraries because AL_USD needs them.
+
+    7. Wait until the process finishes. This can take some time.
+
+    8. Check output in cmd, it will tell you to add some paths into environment variables. Do it.
+
+        7.1. Add C:\usd\lib\python into PYTHONPATH
+
+        7.2. Add C:\usd\bin
+
+        7.3. Add C:\usd\lib
+
+    9. Clone USD_Maya repository: git clone https://github.com/Autodesk/maya-usd.git
+
+    10. USD in Windows has a problem with pxrTargets.cmake. Some libraries (hdStream, usdObj & usdShaders) are dynamic libs and have no .lib files on Windows. 
+
+        9.1. Go to C:\usd\cmake and open pxrTargets.cmake
+
+        9.2. Search for "if(NOT EXISTS "${file}" 433
+
+        9.3. Replace that line with the following code:
+
+    # =============================================================================================
+
+    get_filename_component(barename "${file}" NAME_WE)
+
+        # HACK - the following are dynamic libs in Windows (no .lib) - these will be dll's only
+
+        set(skip_dynamic_libs "hdStream" "usdObj" "usdShaders")
+
+        list(FIND skip_dynamic_libs ${barename} _index)
+
+        if(NOT EXISTS "${file}" AND NOT ((${_index} GREATER -1) AND WIN32))
+
+    # =============================================================================================
+
+    11. I have also detected some problems during build when FindUSD does not find usdGenSchema file. 
+
+        10.1. Go to your USD repo folder (not the installation) and go to USD\pxr\usd\lib\usd. There you will find a file called usdGenSchema.py
+
+        10.2. Copy that file and paste it in C:\usd\bin
+
+        10.3. Also remove the .py extension from that file and rename only to usdGenSchema
+
+    12. Open cmd and go to maya-usd root repositoy folder
+
+    13. In that folder, call in cmd: "C:\Python27\python.exe" build.py --maya-location "C:\Program Files\Autodesk\maya2018" --pxrusd-location C:\usd C:\usd-maya
+
+    14. Wait until the process finishes. This can take some time.
+
+    15. Go to C:\usd-maya\install\RelWithDebInfo. In that folder you will find mayaUSD.mod file.
+
+    16. Copy that file and paste in documents/maya/2018/modules
+
+    17. Open that file in your text editor and replace it with the following context:
+
+    # =============================================================================================
+
+    + USD 19.05 C:\usd
+
+    PYTHONPATH+:=lib/python
+
+    PATH+:=bin
+
+    PATH+:=lib
+
+    + PXR_USDMAYA 19.05 C:\usd-maya\install\RelWithDebInfo\plugin\pxr
+
+    PYTHONPATH+:=lib/python
+
+    PATH+:=maya/lib
+
+    XBMLANGPATH+:=maya/lib/usd/usdMaya/resources
+
+    MAYA_SCRIPT_PATH+:=maya/lib/usd/usdMaya/resources
+
+    MAYA_PLUG_IN_PATH+:=maya/plugin
+
+    PXR_PLUGINPATH_NAME+:=lib/usd
+
+    + AL_USDMaya 0.34.0 C:\usd-maya\install\RelWithDebInfo\plugin\al
+
+    PYTHONPATH+:=lib/python
+
+    PATH+:=lib
+
+    MAYA_PLUG_IN_PATH+:=plugin
+
+    PXR_PLUGINPATH_NAME+:=lib/usd
+
+    # =============================================================================================
+
+    18. Launch Maya 2018
+
+    19. Now you need to load AL_USD plugin
+
+    # =============================================================================================
+
+    from maya import cmds
+
+    cmds.loadPlugin('AL_USDMayaPlugin') 
+
+    # =============================================================================================
+
+    20. USD menu will be created and you will be able to create Proxy Shapes 
+
+
+
+ - maya 2019 选取al的draw proxy的方法
+    
+    You need to build with --devkit-location so that UFE devkit can be found and compiled with.
