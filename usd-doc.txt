@@ -1,3 +1,9 @@
+ - USD / maya-usd debug build命令
+
+    python build_scripts\build_usd.py --build-args boost,"--with-date_time --with-thread --with-system --with-filesystem" --debug --no-maya C:\USD
+    python build.py --build-debug --maya-location "C:\Program Files\Autodesk\Maya2018" --pxrusd-location C:\USD C:\usd-maya
+
+ 
  - 出现python27_d.lib LINK的问题
 
     I changed
@@ -15,6 +21,7 @@
 
     Made a copy of python27.lib and rename it python27_d.lib
     And build usd with –maya flag works now
+
 
  - 缺失C:\Python27\include\pyconfig.h文件
 
@@ -166,7 +173,17 @@
     20. USD menu will be created and you will be able to create Proxy Shapes 
 
 
+ - Cannot open include file: 'pthread.h'问题
 
- - maya 2019 选取al的draw proxy的方法
-    
-    You need to build with --devkit-location so that UFE devkit can be found and compiled with.
+    在文件maya-usd\plugin\al\usdtransaction\AL\usd\transaction\tests\CMakeLists.txt第52行
+    把代码：
+    set_tests_properties(${USDTRANSACTION_PYTHON_TEST_NAME} 
+        PROPERTIES 
+        ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/${INSTALL_DIR_SUFFIX}/usdtransaction:${CMAKE_BINARY_DIR}/src:$ENV{PYTHONPATH} )
+
+    修改为：
+    set_tests_properties(${USDTRANSACTION_PYTHON_TEST_NAME} 
+        PROPERTIES 
+        ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/${INSTALL_DIR_SUFFIX}/usdtransaction:${CMAKE_BINARY_DIR}/src:$ENV{PYTHONPATH}" ) 
+
+    就是把ENVIROMENT的值上面加上双引号 
