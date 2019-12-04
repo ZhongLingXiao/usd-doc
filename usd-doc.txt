@@ -6,21 +6,31 @@
  
  - 出现python27_d.lib LINK的问题
 
-    I changed
+    情况1：
     
-    1. 打开文件C:\Python27\include\pyconfig.h
-    
-    2. 注释掉 //#define Py_DEBUG
+        1. 打开文件C:\Python27\include\pyconfig.h
+        
+        2. 注释掉 //#define Py_DEBUG
 
-    3. 修改
-    ifdef _DEBUG
-    #	pragma comment(lib,"python27_d.lib")
-    To 
-    ifdef _DEBUG
-    #	pragma comment(lib,"python27.lib")
+        3. 修改
+        ifdef _DEBUG
+        #	pragma comment(lib,"python27_d.lib")
+        To 
+        ifdef _DEBUG
+        #	pragma comment(lib,"python27.lib")
 
-    Made a copy of python27.lib and rename it python27_d.lib
-    And build usd with –maya flag works now
+        Made a copy of python27.lib and rename it python27_d.lib
+        And build usd with –maya flag works now
+
+    情况2：
+
+        当hgiGL中出现这个debug编译错误：
+        在头文件下 #include <boost/preprocessor/tuple/to_seq.hpp> 添加这几行
+
+        #if defined(PXR_PYTHON_SUPPORT_ENABLED) && defined(ARCH_OS_WINDOWS)
+        // Enable debug builds to link without debug binaries of Python.
+        #include <boost/python/detail/wrap_python.hpp>
+        #endif // defined(PXR_PYTHON_SUPPORT_ENABLED) && defined(ARCH_OS_WINDOWS)
 
 
  - 缺失C:\Python27\include\pyconfig.h文件
